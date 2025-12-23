@@ -1,0 +1,124 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Product {
+    int id;
+    char name[50];
+    float price;
+    int quantity;
+};
+
+void addProduct() {
+    struct Product p;
+    FILE *fp = fopen("inventory.dat", "ab");
+
+    printf("Enter Product ID: ");
+    scanf("%d", &p.id);
+    printf("Enter Product Name: ");
+    scanf(" %[^\n]", p.name);
+    printf("Enter Price: ");
+    scanf("%f", &p.price);
+    printf("Enter Quantity: ");
+    scanf("%d", &p.quantity);
+
+    fwrite(&p, sizeof(p), 1, fp);
+    fclose(fp);
+    printf("Product added successfully.\n");
+}
+
+void viewProducts() {
+    struct Product p;
+    FILE *fp = fopen("inventory.dat", "rb");
+
+    if (fp == NULL) {
+        printf("No inventory found.\n");
+        return;
+    }
+
+    printf("\nID\tName\t\tPrice\tQuantity\n");
+    printf("-----------------------------------------\n");
+
+    while (fread(&p, sizeof(p), 1, fp)) {
+        printf("%d\t%s\t%.2f\t%d\n", p.id, p.name, p.price, p.quantity);
+    }
+
+    fclose(fp);
+}
+
+void updateProduct() {
+    struct Product p;
+    int id, found = 0;
+    FILE *fp = fopen("inventory.dat", "rb+");
+
+    printf("Enter Product ID to update: ");
+    scanf("%d", &id);
+
+    while (fread(&p, sizeof(p), 1, fp)) {
+        if (p.id == id) {
+            printf("Enter new quantity: ");
+            scanf("%d", &p.quantity);
+            fseek(fp, -sizeof(p), SEEK_CUR);
+            fwrite(&p, sizeof(p), 1, fp);
+            found = 1;
+            break;
+        }
+    }
+
+    fclose(fp);
+
+    if (found)
+        printf("Product updated successfully.\n");
+    else
+        printf("Product not found.\n");
+}
+
+void deleteProduct() {
+    struct Product p;
+    int id;
+    FILE *fp = fopen("inventory.dat", "rb");
+    FILE *temp = fopen("temp.dat", "wb");
+
+    printf("Enter Product ID to delete: ");
+    scanf("%d", &id);
+
+    while (fread(&p, sizeof(p), 1, fp)) {
+        if (p.id != id) {
+            fwrite(&p, sizeof(p), 1, temp);
+        }
+    }
+
+    fclose(fp);
+    fclose(temp);
+
+    remove("inventory.dat");
+    rename("temp.dat", "inventory.dat");
+
+    printf("Product deleted successfully.\n");
+}
+
+int main() {
+    int choice;
+
+    do {
+        printf("\n--- Inventory Management System ---\n");
+        printf("1. Add Product\n");
+        printf("2. View Products\n");
+        printf("3. Update Product Quantity\n");
+        printf("4. Delete Product\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: addProduct(); break;
+            case 2: viewProducts(); break;
+            case 3: updateProduct(); break;
+            case 4: deleteProduct(); break;
+            case 5: printf("Exiting...\n"); break;
+            default: printf("Invalid choice.\n");
+        }
+    } while (choice != 5);
+
+    return 0;
+}
